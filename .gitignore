@@ -131,3 +131,6 @@ dmypy.json
 
 docker_naru/
 *.pth
+*.png
+output/
+dev.ipynb
