@@ -37,10 +37,10 @@ RUN sed -i 's/#PasswordAuthentication/PasswordAuthentication/' /etc/ssh/sshd_con
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 RUN pip install --upgrade pip
-COPY ./requirements.txt /tmp
-RUN pip install -r /tmp/requirements.txt
 RUN pip install git+https://github.com/sabjorn/NumpySocket.git
 RUN pip install torch torchvision torchsummary torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+COPY ./requirements.txt /tmp
+RUN pip install -r /tmp/requirements.txt
 
 # 超解像系
 RUN pip install git+https://github.com/naru-19/Myutils
@@ -57,7 +57,6 @@ RUN mkdir /home/${username}/.jupyter && \
     >> /home/${username}/.jupyter/jupyter_notebook_config.py
 
 
-EXPOSE 22
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
 # 起動後にsudo /usr/sbin/sshd
