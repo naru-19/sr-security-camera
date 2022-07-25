@@ -4,32 +4,33 @@ from numpysocket import NumpySocket
 import cv2
 import argparse
 
+
 def main():
     cap = cv2.VideoCapture(0)
-    read_fps= cap.get(cv2.CAP_PROP_FPS)
+    read_fps = cap.get(cv2.CAP_PROP_FPS)
     thresh = read_fps / fps
     frame_counter = 0
-    
+
     np_sock = NumpySocket()
     np_sock.startClient(host_ip, port)
 
     # Read until video is completed
-    while(cap.isOpened()):
+    while cap.isOpened():
         ret, frame = cap.read()
         frame_counter += 1
 
         if ret is False:
-            break 
-        if (frame_counter >= thresh):
+            break
+        if frame_counter >= thresh:
             try:
-                # frame_resize = ref_frame[::2, ::2]
                 frame_resize = cv2.resize(frame, dsize=None, fx=scale, fy=scale)
                 np_sock.send(frame_resize)
-            except:
+            except TypeError:
                 break
             frame_counter = 0
     np_sock.close()
     cap.release()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
