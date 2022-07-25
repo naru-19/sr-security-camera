@@ -31,22 +31,24 @@ class cfg:
 	batch_size=16
 
 	# Train epochs.
-	p_epochs=50 # The total number of cycles of the generator training phase.
-	epochs=20  # The total number of cycles in the training phase of the adversarial network.
+	p_epochs=100 # The total number of cycles of the generator training phase.
+	epochs=50  # The total number of cycles in the training phase of the adversarial network.
 
 
-	exp_name='exp-1'
+	exp_name='exp-2'
 	exp_dir=opj('output',exp_name)
 	model_dir=opj(exp_dir,'models')
 	output_dir=opj(exp_dir ,'images')
-	
-	if os.path.exists(exp_dir):
-		print('please change exp name')
-		sys.exit()
+
+	mkdirs(model_dir)
+	mkdirs(output_dir)
+	# if os.path.exists(exp_dir):
+	# 	print('please change exp name')
+	# 	sys.exit()
 
 	vgg_path='/work/dataset/vgg-pre.pickle'
 	train_path_df=pd.read_csv('path_df.csv').iloc[:5000,:]
-	valid_path_df=pd.read_csv('path_df.csv').iloc[5000:10000,:]
+	valid_path_df=pd.read_csv('path_df.csv').iloc[5000:6000,:]
 
 	pixel_weight          = 0.01
 	content_weight        = 1.0

@@ -165,8 +165,8 @@ class SRGAN():
 			self.train_adversarial(epoch)
 			psnr=self.validate(epoch,stage='adversarial')
 			if (epoch+1)%5==0:
-				torch.save(self.generator.state_dict(),opj(self.cfg.model_dir,f'g-{epoch}.pth'))
-				torch.save(self.discriminator.state_dict(),opj(self.cfg.model_dir,f'd-{epoch}.pth'))
+				torch.save(self.generator.state_dict(),opj(self.cfg.model_dir,f'g-{epoch+1}.pth'))
+				torch.save(self.discriminator.state_dict(),opj(self.cfg.model_dir,f'd-{epoch+1}.pth'))
 			if psnr>psnr_best:
 				psnr_best=psnr
 				torch.save(self.generator.state_dict(),opj(self.cfg.model_dir,'g-best.pth'))
@@ -193,7 +193,7 @@ class SRGAN():
 					for i,save_img in enumerate([lr,hr,sr]):
 						img=(save_img[0].permute(1,2,0).to('cpu').detach().numpy().copy()*255).astype(int)
 						mkdirs(self.cfg.output_dir)
-						cv2.imwrite(opj(self.cfg.output_dir,f'epoch{epoch}-{save_filename[i]}.png'),img)
+						cv2.imwrite(opj(self.cfg.output_dir,f'{stage}-epoch{epoch+1}-{save_filename[i]}.png'),img)
 
 				# Calculate the PSNR indicator.
 				mse_loss = ((sr - hr) ** 2).data.mean()
@@ -204,5 +204,27 @@ class SRGAN():
 			print(f'epoch-{epoch} average psnr:{avg_psnr_value}')
 
 		return avg_psnr_value
+
+
+	def load_model(self,model_path):
+		self.generator=Generator().to(self.cfg.device)
+		self.generator.load_state_dict(torch.load(model_path,map_location=self.cfg.device))
+		decopri('successfully loaded generator!')
+
+	def eval(self,img):
+		"""
+		img:cv2.imread(path,-1)で読み込んだ画像(サイズ不問:内部でcfgで設定したlrのサイズにしている．),
+		return 512*512に超解像した画像
+		"""
+		img=image2tensor(img)
+		lr_image_size=(self.cfg.image_size//self.cfg.upscale_factor,self.cfg.image_size//self.cfg.upscale_factor)
+		lr_transforms=transforms.Compose([
+			transforms.Resize(lr_image_size,interpolation=IMode.BICUBIC),
+		])
+		img=lr_transforms(img)
+		img_shape=img.shape
+		img=img.view(1,*img_shape)
+		img=img.to(self.cfg.device)
+		return self.generator(img).permute(0,2,3,1).cpu().detach().numpy()[0]
 
 		

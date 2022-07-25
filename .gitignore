@@ -134,3 +134,4 @@ docker_naru/
 *.png
 output/
 dev.ipynb
+.nfs*
