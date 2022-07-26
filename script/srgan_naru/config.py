@@ -50,6 +50,9 @@ class cfg:
 	train_path_df=pd.read_csv('path_df.csv').iloc[:5000,:]
 	valid_path_df=pd.read_csv('path_df.csv').iloc[5000:6000,:]
 
+	# streamlitで動かすモデルのパス
+	model_path='./output/exp-1/models/p-best.pth'
+
 	pixel_weight          = 0.01
 	content_weight        = 1.0
 	adversarial_weight    = 0.001
