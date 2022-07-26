@@ -20,7 +20,7 @@ import cv2
 from utils.imgproc import *
 from model import *
 
-class SRGAN():
+class SRGAN:
 	def __init__(self,cfg):
 		self.cfg=cfg
 
@@ -211,20 +211,25 @@ class SRGAN():
 		self.generator.load_state_dict(torch.load(model_path,map_location=self.cfg.device))
 		decopri('successfully loaded generator!')
 
-	def eval(self,img):
+	def eval(self,imgs,EvalCustomDataset,verbose=0):
 		"""
-		img:cv2.imread(path,-1)で読み込んだ画像(サイズ不問:内部でcfgで設定したlrのサイズにしている．),
-		return 512*512に超解像した画像
+		input
+		imgs:画像リスト
+		EvalCustomDataset:eval用のデータセット
 		"""
-		img=image2tensor(img)
-		lr_image_size=(self.cfg.image_size//self.cfg.upscale_factor,self.cfg.image_size//self.cfg.upscale_factor)
-		lr_transforms=transforms.Compose([
-			transforms.Resize(lr_image_size,interpolation=IMode.BICUBIC),
-		])
-		img=lr_transforms(img)
-		img_shape=img.shape
-		img=img.view(1,*img_shape)
-		img=img.to(self.cfg.device)
-		return self.generator(img).permute(0,2,3,1).cpu().detach().numpy()[0]
+		eval_dataset=EvalCustomDataset(self.cfg,imgs=imgs)
+		eval_loader=DataLoader(eval_dataset,self.cfg.eval_batch_size,True,pin_memory=True)
+		start=time.time()
+		print('eval start')
+		for i,lr in enumerate(eval_loader):
+			pred=self.generator(lr.to(self.cfg.device))
+			if i==0:
+				pred_np=pred.permute(0,2,3,1).cpu().detach().numpy()
+			else:
+				pred_np=np.concatenate([pred_np,pred.permute(0,2,3,1).cpu().detach().numpy()])
+		end=time.time()
+		if verbose>0:
+			print(f'eval end:{end-start:.3f}')
+		return pred_np
 
 		

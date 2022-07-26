@@ -24,11 +24,12 @@ from model import *
 
 
 class cfg:
-	device = torch.device("cuda:0")
+	device = torch.device("cuda:1")
 	seed=19
 	upscale_factor=4
 	image_size=512 # hr image size(low res image size=image_size/upscale_factor)
 	batch_size=16
+	eval_batch_size=4
 
 	# Train epochs.
 	p_epochs=100 # The total number of cycles of the generator training phase.
@@ -88,3 +89,18 @@ class CustomDataset(Dataset):
 	def __len__(self):
 		return len(self.filenames)
 
+class EvalCustomDataset(Dataset):
+	def __init__(self,cfg,imgs=[]):
+		self.lr_image_size=(cfg.image_size//cfg.upscale_factor,cfg.image_size//cfg.upscale_factor)
+		self.lr_transforms=transforms.Compose([
+			transforms.Resize(self.lr_image_size,interpolation=IMode.BICUBIC),
+		])
+		self.imgs=imgs
+	def __getitem__(self,index):
+		lr=image2tensor(self.imgs[index])
+		if self.imgs[index].shape[0]!=self.lr_image_size[0]:
+			lr=self.lr_transforms(lr)
+		return lr
+
+	def __len__(self):
+		return len(self.imgs)
