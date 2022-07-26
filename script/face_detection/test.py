@@ -10,7 +10,7 @@ from face_detector import FaceDetector
 
 
 def main():
-    face_detector = FaceDetector(upscale_factor=1)
+    face_detector = FaceDetector(upscale_factor=4, face_size=128)
     print("start")
     st.markdown("# Camera")
     np_sock = NumpySocket()

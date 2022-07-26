@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def get_location(val, length):
     if val < 0:
         return 0
@@ -5,6 +8,7 @@ def get_location(val, length):
         return length
     else:
         return val
+
 
 def get_largest_face(det_faces, h, w):
     face_areas = []

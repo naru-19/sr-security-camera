@@ -69,13 +69,31 @@ class FaceDetector(object):
         self.use_parse = use_parse
         self.face_parse = init_parsing_model(model_name='parsenet', device=self.device)
 
-    def crop_faces(self, input_img, save_cropped_path=None):
+    def crop_faces(self, input_img, save_path=None):
+        """
+        :param input_img: [np.array | str] 顔が映った画像1枚
+        :param save_path: [str] 保存先　なくてもいい
+        :return: cropped_faces: [list of np.array] クロップされた顔（複数）
+        :return: bboxes: [list of np.array] クロップに対応した4点（複数）
+        """
         self.clean_all()
         self.read_image(input_img)
         self.get_face_landmarks_5()
-        self.align_warp_face(save_cropped_path)
+        self.align_warp_face(save_path)
         self.get_face_bboxes()
         return self.cropped_faces, self.bboxes
+
+    def restore_faces_in_input_image(self, restored_faces, save_path=None):
+        """
+        :param restored_faces: [list of np.array] 超解像された顔画像
+        :param save_path: [str] 保存先　なくてもいい
+        :return: upsample_img [np.array] 顔が超解像された全体画像
+        """
+        w_up, h_up = int(self.face_size[0] * self.upscale_factor), int(self.face_size[1] * self.upscale_factor)
+        for restored_face in restored_faces:
+            self.add_restored_face(cv2.resize(restored_face, (w_up, h_up), interpolation=cv2.INTER_LINEAR))
+        upsample_img = self.paste_faces_to_input_image(save_path)
+        return upsample_img
 
     def read_image(self, img):
         """img can be image path or cv2 loaded image."""
@@ -249,10 +267,11 @@ class FaceDetector(object):
         self.get_inverse_affine()
         for cropped_face, inverse_affine_matrix in zip(self.cropped_faces, self.inverse_affine_matrices):
             height, width = cropped_face.shape[:2]
-            # 右周りの点
+            # 右周りの点(opencvのcontourに合わせている)
             cropped_rect = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]])
             cropped_rect = np.array([cropped_rect], dtype=float)
             inv_affine = np.vstack([inverse_affine_matrix, np.array([0, 0, 1])])
+            # opencvのcontourと同じshapeにしている
             self.bboxes.append(cv2.perspectiveTransform(cropped_rect, inv_affine).reshape(-1, 1, 2).astype(int))
 
     def add_restored_face(self, face):
@@ -269,7 +288,7 @@ class FaceDetector(object):
             upsample_img = cv2.resize(upsample_img, (w_up, h_up), interpolation=cv2.INTER_LANCZOS4)
 
         assert len(self.restored_faces) == len(
-            self.inverse_affine_matrices), ('length of restored_faces and affine_matrices are different.')
+            self.inverse_affine_matrices), 'length of restored_faces and affine_matrices are different.'
         for restored_face, inverse_affine in zip(self.restored_faces, self.inverse_affine_matrices):
             # Add an offset to inverse affine matrix, for more precise back alignment
             if self.upscale_factor > 1:
@@ -355,18 +374,23 @@ class FaceDetector(object):
         self.pad_input_imgs = []
 
 
-if __name__ == '__main__':
+def main():
     # initialize face helper
     face_detector = FaceDetector(upscale_factor=1)
 
-    img_paths = glob.glob('./test/*')  # 適当な顔画像を置く
-    save_path = 'test'
+    img_paths = glob.glob('./test/*.jpg')  # 適当な顔画像を置く
+    save_path = 'test/output'
     for i, path in enumerate(img_paths):
         img = cv2.imread(path)
         print(i, path)
         file_name = os.path.basename(path)
         save_path = os.path.join(save_path, file_name)
-        cropped_faces, bboxes = face_detector.crop_faces(img, save_cropped_path=save_path)
+        cropped_faces, bboxes = face_detector.crop_faces(img, save_path=save_path)
         img_drawed = img.copy()
         img_drawed = cv2.drawContours(img_drawed, bboxes, -1, (0, 255, 0), thickness=2)
-        cv2.imwrite(f"{os.path.splitext(save_path)[0]}_{idx:02d}_bbox.png", img_drawed)
+        cv2.imwrite(f"{os.path.splitext(save_path)[0]}_{i:02d}_bbox.png", img_drawed)
+        face_detector.restore_faces_in_input_image(cropped_faces, save_path=save_path)
+
+
+if __name__ == '__main__':
+    main()
