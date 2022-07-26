@@ -4,11 +4,11 @@ import os
 import glob
 import torch
 from torchvision.transforms.functional import normalize
-
 from facexlib.detection import init_detection_model
 from facexlib.parsing import init_parsing_model
 from facexlib.utils.misc import img2tensor, imwrite
 from utils.face_util import *
+from narutils import *
 
 
 class FaceDetector(object):
@@ -18,6 +18,7 @@ class FaceDetector(object):
                  upscale_factor,
                  face_size=128,
                  crop_ratio=(1, 1),
+                 # choose retinaface_resnet50 or retinaface_mobile0.25
                  det_model='retinaface_resnet50',
                  save_ext='png',
                  template_3points=False,
@@ -89,9 +90,8 @@ class FaceDetector(object):
         :param save_path: [str] 保存先　なくてもいい
         :return: upsample_img [np.array] 顔が超解像された全体画像
         """
-        w_up, h_up = int(self.face_size[0] * self.upscale_factor), int(self.face_size[1] * self.upscale_factor)
         for restored_face in restored_faces:
-            self.add_restored_face(cv2.resize(restored_face, (w_up, h_up), interpolation=cv2.INTER_LINEAR))
+            self.add_restored_face(restored_face)
         upsample_img = self.paste_faces_to_input_image(save_path)
         return upsample_img
 
@@ -270,7 +270,7 @@ class FaceDetector(object):
             # 右周りの点(opencvのcontourに合わせている)
             cropped_rect = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]])
             cropped_rect = np.array([cropped_rect], dtype=float)
-            inv_affine = np.vstack([inverse_affine_matrix, np.array([0, 0, 1])])
+            inv_affine = np.vstack([inverse_affine_matrix / self.upscale_factor, np.array([0, 0, 1])])
             # opencvのcontourと同じshapeにしている
             self.bboxes.append(cv2.perspectiveTransform(cropped_rect, inv_affine).reshape(-1, 1, 2).astype(int))
 
@@ -374,9 +374,9 @@ class FaceDetector(object):
         self.pad_input_imgs = []
 
 
-def main():
+def test():
     # initialize face helper
-    face_detector = FaceDetector(upscale_factor=1)
+    face_detector = FaceDetector(upscale_factor=4, face_size=128)
 
     img_paths = glob.glob('./test/*.jpg')  # 適当な顔画像を置く
     save_path = 'test/output'
@@ -384,7 +384,7 @@ def main():
         img = cv2.imread(path)
         print(i, path)
         file_name = os.path.basename(path)
-        save_path = os.path.join(save_path, file_name)
+        save_path = opj(save_path, file_name)
         cropped_faces, bboxes = face_detector.crop_faces(img, save_path=save_path)
         img_drawed = img.copy()
         img_drawed = cv2.drawContours(img_drawed, bboxes, -1, (0, 255, 0), thickness=2)
@@ -393,4 +393,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    test()
