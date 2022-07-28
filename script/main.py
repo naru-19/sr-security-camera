@@ -30,7 +30,7 @@ def main():
         time_loc.text(str(now(start)))
         cropped_faces, bboxes = face_detector.crop_faces(image_raw)
         if len(cropped_faces) > 0:
-            restored_face = (srgan.eval(cropped_faces[0])*255).astype(np.uint8)
+            restored_face = (srgan.eval(cropped_faces[0]) * 255).astype(np.uint8)
             detect_img = cv2.drawContours(image_raw, bboxes, -1, (0, 255, 0), thickness=2)
             detect_image_rgb = Image.fromarray(cv2.cvtColor(detect_img, cv2.COLOR_BGR2RGB))
             sr_image_rgb = Image.fromarray(cv2.cvtColor(restored_face, cv2.COLOR_BGR2RGB))
