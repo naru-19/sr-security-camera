@@ -17,8 +17,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 
-from utils.imgproc import *
-from model import *
+from srgan_naru.utils.imgproc import *
+from srgan_naru.model import *
 
 class SRGAN():
 	def __init__(self,cfg):

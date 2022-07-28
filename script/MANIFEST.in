@@ -1,2 +1,0 @@
-include */path_df.csv */vgg-pre.pickle
-global-exclude *.py[cod] __pycache__ *.so *.jpg *.png test
