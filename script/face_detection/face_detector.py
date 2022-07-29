@@ -7,7 +7,7 @@ from torchvision.transforms.functional import normalize
 from facexlib.detection import init_detection_model
 from facexlib.parsing import init_parsing_model
 from facexlib.utils.misc import img2tensor, imwrite
-from utils.face_util import *
+from face_detection.utils.face_util import *
 from narutils import *
 
 
@@ -18,13 +18,23 @@ class FaceDetector(object):
                  upscale_factor,
                  face_size=128,
                  crop_ratio=(1, 1),
-                 # choose retinaface_resnet50 or retinaface_mobile0.25
                  det_model='retinaface_resnet50',
                  save_ext='png',
                  template_3points=False,
                  pad_blur=False,
                  use_parse=False,
                  device=None):
+        """
+        :param upscale_factor: GANのアップスケール倍率
+        :param face_size: GANの入力にする画像のサイズ
+        :param crop_ratio: 変えなくていい
+        :param det_model: retinaface_resnet50 or retinaface_mobile0.25
+        :param save_ext: pngとか
+        :param template_3points: いらん
+        :param pad_blur: いらん
+        :param use_parse: いらん
+        :param device: デフォルトはcuda:0
+        """
         self.template_3points = template_3points  # improve robustness
         self.upscale_factor = upscale_factor
         # the cropped face ratio based on the square face
@@ -90,8 +100,9 @@ class FaceDetector(object):
         :param save_path: [str] 保存先　なくてもいい
         :return: upsample_img [np.array] 顔が超解像された全体画像
         """
+        w_up, h_up = int(self.face_size[0] * self.upscale_factor), int(self.face_size[1] * self.upscale_factor)
         for restored_face in restored_faces:
-            self.add_restored_face(restored_face)
+            self.add_restored_face(cv2.resize(restored_face, (w_up, h_up), interpolation=cv2.INTER_LINEAR))
         upsample_img = self.paste_faces_to_input_image(save_path)
         return upsample_img
 
@@ -256,7 +267,6 @@ class FaceDetector(object):
         """Get inverse affine matrix."""
         for idx, affine_matrix in enumerate(self.affine_matrices):
             inverse_affine = cv2.invertAffineTransform(affine_matrix)
-            inverse_affine *= self.upscale_factor
             self.inverse_affine_matrices.append(inverse_affine)
             # save inverse affine matrices
             if save_inverse_affine_path is not None:
@@ -270,7 +280,7 @@ class FaceDetector(object):
             # 右周りの点(opencvのcontourに合わせている)
             cropped_rect = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]])
             cropped_rect = np.array([cropped_rect], dtype=float)
-            inv_affine = np.vstack([inverse_affine_matrix / self.upscale_factor, np.array([0, 0, 1])])
+            inv_affine = np.vstack([inverse_affine_matrix, np.array([0, 0, 1])])
             # opencvのcontourと同じshapeにしている
             self.bboxes.append(cv2.perspectiveTransform(cropped_rect, inv_affine).reshape(-1, 1, 2).astype(int))
 

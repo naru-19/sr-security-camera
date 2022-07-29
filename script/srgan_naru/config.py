@@ -16,8 +16,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 
-from utils.imgproc import *
-from model import *
+from srgan_naru.utils.imgproc import *
+from srgan_naru.model import *
 
 
 
@@ -46,9 +46,12 @@ class cfg:
 	# 	print('please change exp name')
 	# 	sys.exit()
 
-	vgg_path='/work/dataset/vgg-pre.pickle'
-	train_path_df=pd.read_csv('path_df.csv').iloc[:5000,:]
-	valid_path_df=pd.read_csv('path_df.csv').iloc[5000:6000,:]
+	vgg_path='srgan_naru/pretrained/vgg-pre.pickle'
+	train_path_df=pd.read_csv('srgan_naru/path_df.csv').iloc[:5000,:]
+	valid_path_df=pd.read_csv('srgan_naru/path_df.csv').iloc[5000:6000,:]
+
+	# streamlitで動かすモデルのパス
+	model_path='srgan_naru/pretrained/p-best.pth'
 
 	pixel_weight          = 0.01
 	content_weight        = 1.0

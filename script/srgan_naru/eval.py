@@ -1,5 +1,5 @@
-from config import cfg,CustomDataset
-from srgan import SRGAN
+from srgan_naru.config import cfg,CustomDataset
+from srgan_naru.srgan import SRGAN
 import shutil
 from narutils import *
 import argparse

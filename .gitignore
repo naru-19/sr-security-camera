@@ -131,6 +131,7 @@ dmypy.json
 
 docker_naru/
 *.pth
+*.pickle
 *.png
 *.jpg
 output/
